@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — 2026-10-17
+## 0.1.0 (2026-10-17)
 
 - First public MIT release.
 - Instrument: read by default, ask before a write, deny what nothing takes back.
