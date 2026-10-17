@@ -20,8 +20,8 @@ python3 scripts/score_guardrails.py --file examples/guardrails-open-crm.json
 refused: 7 fix(es) for crm
 - defaultMode is bypassPermissions, so CRM writes skip every prompt → use default, or acceptEdits for file edits only
 - allow rule mcp__crm__* lets every crm tool run, writes included → allow only read tools, e.g. mcp__crm__get_*, mcp__crm__list_*, mcp__crm__search_*
-- no ask rule in front of crm writes → add mcp__crm__*create*, mcp__crm__*update* and mcp__crm__*upsert* to ask, so every write shows you the change first
-- crm deletes and merges are not denied → add mcp__crm__*delete* and mcp__crm__*merge* to deny; nothing takes a delete back, so do those by hand in the CRM
+- crm writes with no ask rule: create, update, upsert, archive, write, send, patch, import → add mcp__crm__*create*, mcp__crm__*update*, ... to ask, so every write shows you the change first
+- crm delete, remove, merge not denied → add mcp__crm__*delete*, mcp__crm__*remove*, mcp__crm__*merge* to deny; nothing takes these back, so do them by hand in the CRM
 - card 1 has no before value → ...
 - card 1 has no source → ...
 - card 1 has no undo line → ...
@@ -40,13 +40,14 @@ Read the second line twice. `mcp__crm__*` reads like "the CRM tools". It means e
 
 ## Step 2: the rules
 
-Reads go in allow, by prefix. Writes go in ask. The last column goes in deny.
+Reads go in allow, by prefix. Writes go in ask, one rule per write verb, so a tool named `send_email` or `import_contacts` cannot slip past. The last column goes in deny.
 
 ```json
 {"permissions": {
   "allow": ["mcp__crm__get_*", "mcp__crm__list_*", "mcp__crm__search_*"],
-  "ask":   ["mcp__crm__*create*", "mcp__crm__*update*", "mcp__crm__*upsert*", "mcp__crm__*archive*"],
-  "deny":  ["mcp__crm__*delete*", "mcp__crm__*merge*"]}}
+  "ask":   ["mcp__crm__*create*", "mcp__crm__*update*", "mcp__crm__*upsert*", "mcp__crm__*archive*",
+             "mcp__crm__*write*", "mcp__crm__*send*", "mcp__crm__*patch*", "mcp__crm__*import*"],
+  "deny":  ["mcp__crm__*delete*", "mcp__crm__*remove*", "mcp__crm__*merge*"]}}
 ```
 
 `defaultMode` comes out. The default prompts on first use, and the ask rules prompt every time after that.

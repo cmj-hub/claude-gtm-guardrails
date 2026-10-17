@@ -31,11 +31,11 @@ Do not trust a tool's own label. The MCP spec says `readOnlyHint` and `destructi
 
 ## Rule 2: ask before a write
 
-Put the write verbs in `permissions.ask`: `mcp__crm__*create*`, `*update*`, `*upsert*`, `*archive*`. Ask and deny rules accept a wildcard anywhere in the tool name. An ask rule wins over a narrower allow rule, so a write prompts every time, even if someone later saves an allow rule that also matches it.
+Put each write verb in `permissions.ask`: `mcp__crm__*create*`, `*update*`, `*upsert*`, `*archive*`, `*write*`, `*send*`, `*patch*`, `*import*`. One rule per verb: a rule for create does nothing for update. Leave `*add*` and `*set*` out; they also match read tools such as `get_address`. Ask for those tools by exact name. Ask and deny rules accept a wildcard anywhere in the tool name. An ask rule wins over a narrower allow rule, so a write prompts every time, even if someone later saves an allow rule that also matches it.
 
 ## Rule 3: deny what nothing takes back
 
-Deletes and merges go in `permissions.deny`. A deny wins over every allow and every ask, at every settings level. A person does those by hand, in the CRM, where the CRM's own safeguards apply.
+Deletes, removes and merges go in `permissions.deny`: `*delete*`, `*remove*`, `*merge*`. A deny wins over every allow and every ask, at every settings level. A person does those by hand, in the CRM, where the CRM's own safeguards apply.
 
 Never run a CRM-connected agent with `defaultMode` set to `bypassPermissions`.
 

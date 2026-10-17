@@ -16,8 +16,9 @@ The draft names the CRM's MCP server(s), carries the Claude Code
    "approval_cards": [{"action": ..., "record": ..., "field": ...,
                        "before": ..., "after": ..., "source": ..., "undo": ...}]}
 
-Refused: an allow rule that lets a CRM write run without a prompt, no ask
-rule in front of CRM writes, CRM deletes that are not denied,
+Refused: an allow rule that lets a CRM write run without a prompt (a
+whole-server rule, or a glob that matches a write-shaped tool name), any
+core write verb with no ask rule, any of delete/remove/merge not denied,
 bypassPermissions as the default mode, and an approval card with no
 before value, no source, or no undo line.
 
@@ -27,6 +28,7 @@ Exit codes: 0 pass, 1 refused (fix the draft), 2 unreadable input.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import re
 import sys
@@ -144,9 +146,28 @@ def has_verb(tool: str, verbs: tuple[str, ...]) -> bool:
     )
 
 
-def covers_server(rule: str, prefix: str) -> bool:
-    bare = prefix[:-2]
-    return rule in (bare, prefix + "*", "mcp__*", "*")
+# Write verbs that must each sit behind an ask (or deny) rule. "add" and "set"
+# are left out on purpose: `*add*` also matches get_address, `*set*` get_settings.
+REQUIRED_ASK = ("create", "update", "upsert", "archive", "write", "send", "patch", "import")
+GLOB_CHARS = set("*?[")
+
+
+def probes(prefix: str, verb: str) -> list[str]:
+    """Tool names a rule must catch for `verb`: verb first, verb last, verb alone."""
+    return [f"{prefix}{verb}_record", f"{prefix}record_{verb}", f"{prefix}{verb}"]
+
+
+def rule_matches(rule: str, tool: str, prefix: str) -> bool:
+    """Does this permission rule match this tool name, as Claude Code reads it?"""
+    if rule == prefix[:-2]:  # bare `mcp__server` matches every tool on it
+        return tool.startswith(prefix)
+    if GLOB_CHARS & set(rule):
+        return fnmatch.fnmatchcase(tool, rule)
+    return rule == tool
+
+
+def covered(rules: list[str], prefix: str, verb: str) -> bool:
+    return any(rule_matches(rule, tool, prefix) for rule in rules for tool in probes(prefix, verb))
 
 
 def tool_part(rule: str, prefix: str) -> str | None:
@@ -161,6 +182,7 @@ def check_server(name: str, perms: dict) -> list[str]:
     ask = rule_list(perms, "ask")
     deny = rule_list(perms, "deny")
     fixes: list[str] = []
+    probe_tools = [tool for verb in WRITE_VERBS for tool in probes(prefix, verb)]
 
     for rule in allow:
         if rule in (prefix[:-2], prefix + "*"):
@@ -171,6 +193,13 @@ def check_server(name: str, perms: dict) -> list[str]:
             continue
         tool = tool_part(rule, prefix)
         if tool is None:
+            # Not anchored to this server. A glob such as mcp__* or * that reaches
+            # this server's tools is refused even though Claude Code skips it today.
+            if GLOB_CHARS & set(rule) and any(fnmatch.fnmatchcase(t, rule) for t in probe_tools):
+                fixes.append(
+                    f"allow rule {rule} is a wildcard that reaches {name} writes"
+                    f" → remove it and allow {name} read tools by name or read-verb prefix"
+                )
             continue
         if tool.startswith("*"):
             fixes.append(
@@ -185,28 +214,25 @@ def check_server(name: str, perms: dict) -> list[str]:
                 f" → allow it only if you have read the tool and it changes nothing"
                 f" (rename the rule to the read tool's exact name)"
             )
+        elif GLOB_CHARS & set(tool) and any(fnmatch.fnmatchcase(t, rule) for t in probe_tools):
+            fixes.append(
+                f"allow rule {rule} also matches write-shaped tool names"
+                f" → end the read verb with an underscore, e.g. {prefix}get_*"
+            )
 
-    def guarded(rules: list[str], verbs: tuple[str, ...]) -> bool:
-        for rule in rules:
-            if covers_server(rule, prefix):
-                return True
-            tool = tool_part(rule, prefix)
-            if tool is not None and has_verb(tool, verbs):
-                return True
-        return False
-
-    writes_only = tuple(verb for verb in WRITE_VERBS if verb not in DELETE_VERBS)
-    if not guarded(ask + deny, writes_only):
+    unasked = [verb for verb in REQUIRED_ASK if not covered(ask + deny, prefix, verb)]
+    if unasked:
+        rules = ", ".join(f"{prefix}*{verb}*" for verb in unasked)
         fixes.append(
-            f"no ask rule in front of {name} writes"
-            f" → add {prefix}*create*, {prefix}*update* and {prefix}*upsert* to ask,"
-            " so every write shows you the change first"
+            f"{name} writes with no ask rule: {', '.join(unasked)}"
+            f" → add {rules} to ask, so every write shows you the change first"
         )
-    if not guarded(deny, DELETE_VERBS):
+    undenied = [verb for verb in DELETE_VERBS if not covered(deny, prefix, verb)]
+    if undenied:
+        rules = ", ".join(f"{prefix}*{verb}*" for verb in undenied)
         fixes.append(
-            f"{name} deletes and merges are not denied"
-            f" → add {prefix}*delete* and {prefix}*merge* to deny; nothing takes a delete back,"
-            " so do those by hand in the CRM"
+            f"{name} {', '.join(undenied)} not denied"
+            f" → add {rules} to deny; nothing takes these back, so do them by hand in the CRM"
         )
     return fixes
 

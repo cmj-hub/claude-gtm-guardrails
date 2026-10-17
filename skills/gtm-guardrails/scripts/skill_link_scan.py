@@ -72,7 +72,12 @@ def main():
     if a.csv:
         with open(a.csv, "w", newline="") as fh:
             w = csv.DictWriter(fh, fieldnames=["file", "line", "kind", "agent_told_to_fetch", "value"])
-            w.writeheader(); w.writerows(rows)
+            w.writeheader(); w.writerows([{k: safe_cell(v) for k, v in r.items()} for r in rows])
+
+def safe_cell(value):
+    """Stop a spreadsheet from reading a cell as a formula (CSV injection)."""
+    text = str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else value
 
 if __name__ == "__main__":
     main()

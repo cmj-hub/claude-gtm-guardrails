@@ -107,6 +107,62 @@ class Rules(unittest.TestCase):
         self.assertEqual(data["fixes"], [])
 
 
+class SecurityReview(unittest.TestCase):
+    """Findings from the 2026-10-17 security review, pinned."""
+
+    def test_unanchored_allow_globs_refused(self):
+        for rule in ("mcp__*", "*", "mcp__crm*"):
+            out = score(with_perms(allow=GOOD["settings"]["permissions"]["allow"] + [rule]))
+            self.assertEqual(out.returncode, 1, rule)
+
+    def test_read_prefix_glob_that_matches_writes_refused(self):
+        # get* (no underscore) also matches a hypothetical getandupdate tool;
+        # a glob is refused when it matches any write-shaped tool name.
+        for rule in ("mcp__crm__*e*", "mcp__crm__?pdate_*", "mcp__crm__[cu]*"):
+            out = score(with_perms(allow=GOOD["settings"]["permissions"]["allow"] + [rule]))
+            self.assertEqual(out.returncode, 1, rule)
+
+    def test_each_write_verb_needs_ask(self):
+        # Only *create* in ask: update and upsert would run on first-use prompts only.
+        out = score(with_perms(ask=["mcp__crm__*create*"]))
+        self.assertEqual(out.returncode, 1)
+        self.assertIn("update", out.stdout)
+
+    def test_each_delete_verb_needs_deny(self):
+        out = score(with_perms(deny=["mcp__crm__*delete*"]))
+        self.assertEqual(out.returncode, 1)
+        self.assertIn("merge", out.stdout)
+
+    def test_server_wide_deny_covers_deletes(self):
+        perms = GOOD["settings"]["permissions"]
+        out = score(with_perms(deny=["mcp__crm__*"], ask=perms["ask"]))
+        self.assertEqual(out.returncode, 0, out.stdout)
+
+    def test_csv_cells_cannot_start_a_formula(self):
+        import csv
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            pack = Path(tmp) / "pack"
+            pack.mkdir()
+            (pack / "SKILL.md").write_text(
+                "=HYPERLINK(\"https://evil.example.org\")\n@cmd npm install x\n-pip install y\n"
+            )
+            out_csv = Path(tmp) / "out.csv"
+            run_scan = subprocess.run(
+                [sys.executable, str(SKILL / "scripts" / "skill_link_scan.py"), str(pack), "--csv", str(out_csv)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(run_scan.returncode, 0, run_scan.stderr)
+            with out_csv.open(newline="") as fh:
+                rows = list(csv.DictReader(fh))
+            self.assertTrue(rows)
+            for row in rows:
+                for cell in row.values():
+                    self.assertFalse(cell[:1] in ("=", "+", "-", "@", "\t", "\r"), cell)
+
+
 class BadInput(unittest.TestCase):
     def test_no_servers(self):
         draft = dict(GOOD, crm_servers=[])

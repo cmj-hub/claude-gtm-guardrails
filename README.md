@@ -28,7 +28,7 @@ python3 scripts/score_guardrails.py --settings ~/.claude/settings.json --crm <se
 ```
 
 ```text
-GOOD  allow get_* list_* search_* · ask *create* *update* · deny *delete* *merge*   →  exit 0
+GOOD  allow get_* list_* search_* · ask *create* *update* … · deny *delete* *merge*  →  exit 0
 BAD   allow mcp__crm__* · defaultMode bypassPermissions                             →  exit 1
 BAD   allow mcp__crm__update_record · no ask rule                                   →  exit 1
 ```
@@ -67,7 +67,7 @@ Swap `claude-code` for `cursor`, `codex`, `grok`, `github-copilot`, `windsurf`, 
 | `skills/gtm-guardrails/scripts/skill_link_scan.py` | Lists every outside link and install command in a skill pack. |
 | `skills/gtm-guardrails/examples/` | Good, write-allowed and open samples, and the worked example. |
 
-The undo sheet, checker ladder, managed-settings template, routine pre-flight and link scan first shipped as separate sheets on [jaymount.com/resources](https://jaymount.com/resources). They are here unchanged, in one install, so the agent can read them.
+The undo sheet, checker ladder, managed-settings template, routine pre-flight and link scan first shipped as separate sheets on [jaymount.com/resources](https://jaymount.com/resources). They are here in one install, so the agent can read them. The link scan carries one fix: its CSV cannot hold a spreadsheet formula.
 
 ## What this pack will not do
 

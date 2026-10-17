@@ -37,8 +37,9 @@ The draft lives at `gtm/guardrails.json`. Create `gtm/` if it is missing.
   "crm_servers": ["crm"],
   "settings": {"permissions": {
     "allow": ["mcp__crm__get_*", "mcp__crm__list_*", "mcp__crm__search_*"],
-    "ask":   ["mcp__crm__*create*", "mcp__crm__*update*", "mcp__crm__*upsert*", "mcp__crm__*archive*"],
-    "deny":  ["mcp__crm__*delete*", "mcp__crm__*merge*"]}},
+    "ask":   ["mcp__crm__*create*", "mcp__crm__*update*", "mcp__crm__*upsert*", "mcp__crm__*archive*",
+             "mcp__crm__*write*", "mcp__crm__*send*", "mcp__crm__*patch*", "mcp__crm__*import*"],
+    "deny":  ["mcp__crm__*delete*", "mcp__crm__*remove*", "mcp__crm__*merge*"]}},
   "approval_cards": []
 }
 ```
