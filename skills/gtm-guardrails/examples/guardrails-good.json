@@ -1,0 +1,21 @@
+{
+  "crm_servers": ["crm"],
+  "settings": {
+    "permissions": {
+      "allow": ["mcp__crm__get_*", "mcp__crm__list_*", "mcp__crm__search_*"],
+      "ask": ["mcp__crm__*create*", "mcp__crm__*update*", "mcp__crm__*upsert*", "mcp__crm__*archive*"],
+      "deny": ["mcp__crm__*delete*", "mcp__crm__*merge*"]
+    }
+  },
+  "approval_cards": [
+    {
+      "action": "update",
+      "record": "Northwind Analytics (company)",
+      "field": "stage",
+      "before": "Evaluation",
+      "after": "Proposal sent",
+      "source": "notes/2026-10-14-northwind-call.md, line 12: \"sent the proposal Tuesday\"",
+      "undo": "Set stage back to Evaluation"
+    }
+  ]
+}

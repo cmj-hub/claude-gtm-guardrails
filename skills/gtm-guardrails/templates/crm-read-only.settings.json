@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__crm__get_*",
+      "mcp__crm__list_*",
+      "mcp__crm__search_*"
+    ],
+    "ask": [
+      "mcp__crm__*create*",
+      "mcp__crm__*update*",
+      "mcp__crm__*upsert*",
+      "mcp__crm__*archive*"
+    ],
+    "deny": [
+      "mcp__crm__*delete*",
+      "mcp__crm__*merge*"
+    ]
+  }
+}
