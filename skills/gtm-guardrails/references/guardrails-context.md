@@ -35,7 +35,7 @@ Put each write verb in `permissions.ask`: `mcp__crm__*create*`, `*update*`, `*up
 
 ## Rule 3: deny what nothing takes back
 
-Deletes, removes and merges go in `permissions.deny`: `*delete*`, `*remove*`, `*merge*`. A deny wins over every allow and every ask, at every settings level. A person does those by hand, in the CRM, where the CRM's own safeguards apply.
+Deletes, removes and merges go in `permissions.deny`: `*delete*`, `*remove*`, `*merge*`. A deny wins over every allow and every ask, at every settings level. A person does those by hand, in the CRM, where the CRM's own safeguards apply. Deny the verbs, not the server: a deny on `mcp__crm__*` also blocks every read, and the agent can no longer do its job.
 
 Never run a CRM-connected agent with `defaultMode` set to `bypassPermissions`.
 

@@ -138,6 +138,15 @@ class SecurityReview(unittest.TestCase):
         out = score(with_perms(deny=["mcp__crm__*"], ask=perms["ask"]))
         self.assertEqual(out.returncode, 0, out.stdout)
 
+    def test_exact_name_read_tool_allowed(self):
+        # SKILL.md step 3: add a read tool that does not start with get/list/search by exact name.
+        out = score(with_perms(allow=GOOD["settings"]["permissions"]["allow"] + ["mcp__crm__whoami"]))
+        self.assertEqual(out.returncode, 0, out.stdout)
+
+    def test_non_read_glob_still_refused(self):
+        out = score(with_perms(allow=GOOD["settings"]["permissions"]["allow"] + ["mcp__crm__who*"]))
+        self.assertEqual(out.returncode, 1)
+
     def test_csv_cells_cannot_start_a_formula(self):
         import csv
         import tempfile

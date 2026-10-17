@@ -208,11 +208,10 @@ def check_server(name: str, perms: dict) -> list[str]:
             )
         elif has_verb(tool, WRITE_VERBS):
             fixes.append(f"allow rule {rule} runs a CRM write with no prompt → move it to ask")
-        elif not any(tool.lower().startswith(verb) for verb in READ_VERBS):
+        elif GLOB_CHARS & set(tool) and not any(tool.lower().startswith(verb) for verb in READ_VERBS):
             fixes.append(
-                f"allow rule {rule} does not start with a read verb"
-                f" → allow it only if you have read the tool and it changes nothing"
-                f" (rename the rule to the read tool's exact name)"
+                f"allow rule {rule} is a wildcard that does not start with a read verb"
+                f" → list each read tool by its exact name instead"
             )
         elif GLOB_CHARS & set(tool) and any(fnmatch.fnmatchcase(t, rule) for t in probe_tools):
             fixes.append(
