@@ -2,7 +2,7 @@
 
 ## 0.1.1 (2026-10-26)
 
-- `skill_link_scan.py` labels each link from its parsed host and path (`urllib.parse.urlsplit`), not a substring or regex. A link to another site that mentions your repo in its query, a look-alike repo name, or a fake host in userinfo (`example.com@other-host`) is now an outside link. `--own` matches only github.com or raw.githubusercontent.com paths that start with owner/repo. Backslashes are read as `/` (as browsers do), and any link with userinfo is an outside link.
+- `skill_link_scan.py` labels each link from its parsed host and path (`urllib.parse.urlsplit`), not a substring or regex. A link to another site that mentions your repo in its query, a look-alike repo name, or a fake host in userinfo (`example.com@other-host`) is now an outside link. `--own` matches only github.com or raw.githubusercontent.com paths that start with owner/repo. Backslashes are read as `/` (as browsers do), and any link with userinfo is an outside link. A link cut short by `)`, `]`, `>` or a quote right before an `@` is an outside link, and so is any GitHub path with `.` or `..` segments (also percent-encoded).
 
 ## 0.1.0 (2026-10-17)
 
