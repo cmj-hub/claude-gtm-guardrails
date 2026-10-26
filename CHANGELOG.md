@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 (2026-10-26)
+
+- `skill_link_scan.py` labels each link from its parsed host and path (`urllib.parse.urlsplit`), not a substring or regex. A link to another site that mentions your repo in its query, a look-alike repo name, or a fake host in userinfo (`example.com@other-host`) is now an outside link. `--own` matches only github.com or raw.githubusercontent.com paths that start with owner/repo.
+
 ## 0.1.0 (2026-10-17)
 
 - First public MIT release.
