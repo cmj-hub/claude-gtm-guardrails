@@ -238,6 +238,17 @@ class LinkClassify(unittest.TestCase):
             self.assertEqual(kind, "outside link", u)
             self.assertEqual(host, "evil.net", u)
 
+    def test_backslash_and_userinfo_are_outside(self):
+        # Browsers read a backslash as "/" in http(s) URLs, so the real host is evil.net.
+        for u in (
+            "https://evil.net\\@github.com/cmj-hub/claude-gtm-guardrails",
+            "https://evil.net\\@localhost/x",
+            "https://evil.net\\@api.example.com/x",
+            "https://user@github.com/cmj-hub/claude-gtm-guardrails",
+            "https://user:pw@localhost/x",
+        ):
+            self.assertEqual(self.classify(u, self.own)[0], "outside link", u)
+
     def test_placeholder_and_local_use_the_parsed_host(self):
         self.assertEqual(self.classify("http://localhost:3000/x", "")[0], "local")
         self.assertEqual(self.classify("https://api.example.com/v1", "")[0], "placeholder")

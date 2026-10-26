@@ -32,11 +32,17 @@ def classify(u, own):
     example.com as userinfo pass as a placeholder. urlsplit drops userinfo and port,
     so the label follows the real host.
     """
+    # Browsers treat "\\" as "/" in http(s) URLs; urlsplit does not. Normalise first
+    # so the host here is the host a browser would open.
+    u = u.replace("\\", "/")
     try:
         parts = urlsplit(u)
         host = (parts.hostname or "").lower()
     except ValueError:
         return "outside link", ""
+    # Userinfo has no honest use in a skill link and is how a host gets disguised.
+    if "@" in parts.netloc or not host.isascii():
+        return "outside link", host
     if host in ("localhost", "127.0.0.1"):
         return "local", host
     if host == "example.com" or host.endswith((".example.com", ".example", ".test")):
